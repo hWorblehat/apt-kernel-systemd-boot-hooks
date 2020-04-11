@@ -1,0 +1,31 @@
+#!/bin/sh
+
+version="$1"
+kernal_path="$2" # Optional argument
+
+# passing the kernel version is required
+[ -z "${version}" ] && exit 0
+
+if [ -z "$kernel_path" ]; then
+	if [ -f "/boot/vmlinuz-${version}" ]; then
+		kernel_path="/boot/vmlinuz-${version}"
+	else if [ -f "/boot/vmlinux-${version}" ]; then
+		kernel_path="/boot/vmlinux-${version}"
+	else
+		exit 1
+	fi
+fi
+
+# avoid running multiple times
+if [ -n "$DEB_MAINT_PARAMS" ]; then
+	eval set -- "$DEB_MAINT_PARAMS"
+	if [ -z "$1" ] || [ "$1" != "configure" ]; then
+		exit 0
+	fi
+fi
+
+initrd_path="$(dirname "$kernal_path")/initrd.img-${version}"
+
+# we're good - run kernel-install
+echo "kernel-install: Installing kernel and loader entry for $version"
+kernel-install add "${version}" "$kernel_path" "$initrd_path" >&2
